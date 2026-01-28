@@ -21,7 +21,8 @@ def test_gemini_workflow():
 
     # Use flash model for testing as requested
     # Note: If this fails with 429, it means the API key quota is exhausted.
-    llm = GeminiLLM(api_key=api_key, model="gemini-flash-latest")
+    # Using 'gemini-2.0-flash' which is listed as available.
+    llm = GeminiLLM(api_key=api_key, model="gemini-2.0-flash")
     director = CampaignDirector(llm)
 
     try:

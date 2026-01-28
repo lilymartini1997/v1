@@ -33,14 +33,16 @@ You can choose a different model (e.g., for cheaper testing) using the `--model`
 python main.py --mode CREATE_CAMPAIGN --input_file your_input.json \
   --llm_provider gemini \
   --gemini_api_key YOUR_API_KEY \
-  --model gemini-flash-latest
+  --model gemini-2.0-flash
 ```
 
-**Supported Models:**
+**Supported Models (Verified):**
 - `gemini-3-pro-preview` (Default, High Quality)
-- `gemini-1.5-pro` (Stable High Quality)
-- `gemini-flash-latest` (Fast/Cheap)
-- `gemini-2.0-flash` (Next Gen Fast)
+- `gemini-2.0-flash` (Fast/Cheap)
+- `gemini-flash-latest`
+- `gemini-pro-latest`
+
+*Note: `gemini-1.5-pro` appears to be unavailable in the current API environment.*
 
 ## Testing
 
