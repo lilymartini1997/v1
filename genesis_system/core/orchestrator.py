@@ -116,6 +116,9 @@ class CampaignDirector:
         # 4. Conversion Artifacts & Repurposing
         self._run_agent("ScriptToSceneConverterAgent")
         self._run_agent("RepurposerAgent")
+
+        # S.T.O.R.M needs Outcome Blueprint/Beliefs to map objections, so ensure they exist (usually run in batch 2)
+        # In CREATE_CAMPAIGN, batch 2 already ran, so we are safe.
         self._run_agent("STORMRetargetingAgent")
 
         # 5. QA & Curation
@@ -185,6 +188,14 @@ class CampaignDirector:
         # Run specific conversion agents
         self._run_agent("RepurposerAgent") # Primary for direct conversion
         self._run_agent("ScriptToSceneConverterAgent")
+
+        # S.T.O.R.M needs structural inputs (Objections, Promises). If we skipped OutcomeEngineer/BeliefAnalyst, we might need them.
+        # Check if we have enough data for STORM. If not, run light versions of persuasion agents?
+        # For now, we assume Repurposer/Intake extracted enough raw info, or STORM will assume based on inputs.
+        # But robustly, we should ensure OutcomeEngineer ran if possible.
+        if not self.state.get_artifact("outcome_blueprint"):
+             self._run_agent("OutcomeEngineerAgent")
+
         self._run_agent("STORMRetargetingAgent")
 
         # Generation: If the user asked for hooks or script variants, we need the engines
