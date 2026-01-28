@@ -112,6 +112,7 @@ def main():
     if args.llm_provider == "openai":
         llm = OpenAILLM(api_key=args.openai_api_key, model=args.model or "gpt-4-turbo")
     elif args.llm_provider == "gemini":
+        # Default to stable Gemini 1.5 Pro. Use --model for others (e.g. gemini-3-pro-preview)
         llm = GeminiLLM(api_key=args.gemini_api_key, model=args.model or "gemini-1.5-pro")
     else:
         llm = MockLLM()

@@ -20,10 +20,12 @@ def test_gemini_workflow():
     }
 
     # Use flash model for testing as requested
+    # Note: If this fails with 429, it means the API key quota is exhausted.
     llm = GeminiLLM(api_key=api_key, model="gemini-flash-latest")
     director = CampaignDirector(llm)
 
     try:
+        print("Starting workflow...")
         result = director.run_campaign("CREATE_CAMPAIGN", inputs)
 
         print("Workflow Finished.")
@@ -32,15 +34,30 @@ def test_gemini_workflow():
 
         # Basic Validation
         artifacts = result.get('artifacts', {})
+
+        # Offer Brief
         if "offer_brief" in artifacts:
             print("PASS: OfferBrief found.")
         else:
             print("FAIL: OfferBrief missing.")
 
+        # Segments
         if "segments" in artifacts:
             print("PASS: Segments found.")
         else:
             print("FAIL: Segments missing.")
+
+        # Buyer Profiles
+        if "buyer_profiles" in artifacts:
+            print("PASS: BuyerProfiles found.")
+        else:
+            print("FAIL: BuyerProfiles missing.")
+
+        # Voice Guide
+        if "voice_guide" in artifacts:
+            print("PASS: VoiceGuide found.")
+        else:
+            print("FAIL: VoiceGuide missing.")
 
     except Exception as e:
         print(f"Workflow failed: {e}")
