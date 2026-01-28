@@ -115,3 +115,38 @@ class OpenAILLM(LLMInterface):
         except Exception as e:
             print(f"Error calling OpenAI API: {e}")
             raise e
+
+class GeminiLLM(LLMInterface):
+    def __init__(self, api_key: str = None, model: str = "gemini-1.5-pro"):
+        self.api_key = api_key or os.environ.get("GEMINI_API_KEY")
+        self.model_name = model
+        if self.api_key:
+             import google.generativeai as genai
+             genai.configure(api_key=self.api_key)
+
+    def generate(self, system_prompt: str, user_prompt: str, agent_name: str) -> Dict[str, Any]:
+        if not self.api_key:
+             raise ValueError("Gemini API key is not set. Please set GEMINI_API_KEY environment variable or pass it.")
+
+        try:
+            import google.generativeai as genai
+        except ImportError:
+            raise ImportError("google-generativeai package is not installed.")
+
+        print(f"--- GeminiLLM: Generating response for {agent_name} using {self.model_name} ---")
+
+        try:
+            # Gemini 1.5 Pro and Flash support system instructions and response_mime_type
+            model = genai.GenerativeModel(
+                self.model_name,
+                system_instruction=system_prompt,
+                generation_config={"response_mime_type": "application/json"}
+            )
+
+            response = model.generate_content(user_prompt)
+
+            content = response.text
+            return json.loads(content)
+        except Exception as e:
+            print(f"Error calling Gemini API: {e}")
+            raise e

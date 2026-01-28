@@ -3,7 +3,7 @@ import json
 import sys
 import os
 from genesis_system.core.orchestrator import CampaignDirector
-from genesis_system.core.llm_interface import MockLLM, OpenAILLM
+from genesis_system.core.llm_interface import MockLLM, OpenAILLM, GeminiLLM
 
 def generate_deliverables_md(state):
     md = "# Campaign Deliverables\n\n"
@@ -92,8 +92,10 @@ def main():
     parser.add_argument("--mode", choices=["CREATE_CAMPAIGN", "CONVERT_ASSET", "BUILD_AGENT"], required=True)
     parser.add_argument("--input_file", help="Path to JSON file containing inputs", required=True)
     parser.add_argument("--output_dir", help="Directory to save outputs", default="output")
-    parser.add_argument("--llm_provider", choices=["mock", "openai"], default="mock", help="LLM Provider to use")
+    parser.add_argument("--llm_provider", choices=["mock", "openai", "gemini"], default="mock", help="LLM Provider to use")
     parser.add_argument("--openai_api_key", help="OpenAI API Key (or set OPENAI_API_KEY env var)", default=None)
+    parser.add_argument("--gemini_api_key", help="Gemini API Key (or set GEMINI_API_KEY env var)", default=None)
+    parser.add_argument("--model", help="LLM Model to use (e.g. gemini-1.5-flash, gpt-4)", default=None)
 
     args = parser.parse_args()
 
@@ -108,7 +110,9 @@ def main():
         sys.exit(1)
 
     if args.llm_provider == "openai":
-        llm = OpenAILLM(api_key=args.openai_api_key)
+        llm = OpenAILLM(api_key=args.openai_api_key, model=args.model or "gpt-4-turbo")
+    elif args.llm_provider == "gemini":
+        llm = GeminiLLM(api_key=args.gemini_api_key, model=args.model or "gemini-1.5-pro")
     else:
         llm = MockLLM()
 
