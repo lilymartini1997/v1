@@ -9,18 +9,60 @@ def generate_deliverables_md(state):
     md = "# Campaign Deliverables\n\n"
     artifacts = state.get("artifacts", {})
 
+    # 1. Offer Brief
     if "offer_brief" in artifacts:
         ob = artifacts["offer_brief"]
         md += f"## Offer Brief: {ob.get('offer_name', 'N/A')}\n"
-        md += f"**Promise:** {ob.get('main_promise')}\n\n"
+        md += f"**Promise:** {ob.get('main_promise')}\n"
+        md += f"**Target Market:** {ob.get('target_market')}\n"
+        md += f"**Mechanism:** {ob.get('mechanism_claim')}\n\n"
 
+    # 2. Segments
     if "segments" in artifacts:
         md += "## Segments\n"
         for seg in artifacts["segments"]:
-            md += f"- **{seg.get('segment_name')}**: {seg.get('core_desire')}\n"
+            md += f"### {seg.get('segment_name')}\n"
+            md += f"- **Desire:** {seg.get('core_desire')}\n"
+            md += f"- **Winning Angles:** {', '.join(seg.get('winning_angles', []))}\n"
         md += "\n"
 
-    # Add more sections as needed
+    # 3. Mechanisms (Top 3)
+    if "top_3" in artifacts:
+        md += "## Top Mechanisms\n"
+        for mech in artifacts["top_3"]:
+            md += f"### {mech.get('name')}\n"
+            md += f"**Why it wins:** {mech.get('why_it_wins')}\n"
+            md += f"**One Liner:** {mech.get('one_liner', '')}\n"
+        md += "\n"
+
+    # 4. Hooks
+    if "hooks" in artifacts:
+        md += "## Hooks\n"
+        for hook in artifacts["hooks"]:
+             md += f"- [{hook.get('type')}] {hook.get('hook')}\n"
+        md += "\n"
+
+    # 5. Scripts (Top selections or all)
+    if "scripts" in artifacts:
+        md += "## Generated Scripts\n"
+        for script in artifacts["scripts"]:
+             md += f"### Script ({script.get('format')})\n"
+             md += f"**Hook:** {script.get('hook')}\n"
+             md += "**Body:**\n"
+             for line in script.get('body', []):
+                 md += f"> {line}\n"
+             md += f"\n**CTA:** {script.get('cta')}\n\n"
+
+    # 6. Emails / Repurposed Assets
+    if "repurposed_assets" in artifacts:
+        md += "## Repurposed Assets\n"
+        for collection in artifacts["repurposed_assets"]:
+            md += f"### Format: {collection.get('target_format')}\n"
+            for asset in collection.get("assets", []):
+                md += f"#### {asset.get('title', 'Asset')}\n"
+                for line in asset.get('body', []):
+                    md += f"{line}\n"
+                md += "\n"
 
     return md
 
@@ -30,7 +72,8 @@ def generate_assets_json(state):
         "scripts": artifacts.get("scripts", []),
         "hooks": artifacts.get("hooks", []),
         "ad_directions": artifacts.get("ad_directions", []),
-        "emails": artifacts.get("repurposed_assets", [])
+        "emails": artifacts.get("repurposed_assets", []),
+        "scene_plan": artifacts.get("scene_plan", {})
     }
     return assets
 

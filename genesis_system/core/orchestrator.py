@@ -59,10 +59,6 @@ class CampaignDirector:
         print(f"Starting Campaign Director: {request_type}")
         self.state.update_inputs(inputs)
 
-        # Inject Orchestrator logic/prompt if needed, but here we hardcode the flow
-        # based on the system prompt description which says "You MUST Trigger the correct agents".
-        # We simulate the Orchestrator agent's decision making by implementing the logic directly.
-
         if request_type == "CREATE_CAMPAIGN":
             self._run_create_campaign()
         elif request_type == "CONVERT_ASSET":
@@ -100,21 +96,57 @@ class CampaignDirector:
 
         # 5. QA & Curation
         self._run_agent("QAAgent")
+
+        # QA REVISION LOOP
+        qa_report = self.state.get_artifact("qa_report")
+        if qa_report and qa_report.get("revision_requests"):
+            print("  !! QA Agent requested revisions. Re-running Scriptwriter & Repurposer.")
+            # In a real system, we would extract the specific instructions and pass them as new inputs.
+            # Here we simulate the loop by re-running the agents.
+            self._run_agent("ScriptwriterAgent")
+            self._run_agent("RepurposerAgent")
+            self._run_agent("QAAgent") # Re-verify
+
         self._run_agent("CuratorAgent")
 
-    def _run_convert_asset(self):
-        # Simplified flow for asset conversion as described in the prompt
-        # "If OfferBrief missing -> run IntakeAgent" - we assume we might need some context.
-        # But for strictly CONVERT_ASSET per Run 2/3 examples:
+        # CURATOR DIVERSITY LOOP
+        curator_report = self.state.get_artifact("curated")
+        if curator_report and curator_report.get("next_generation_instructions"):
+            print("  !! Curator Agent requested more variants. Re-running Lottery & Hook Engine.")
+            self._run_agent("AdLotteryAgent")
+            self._run_agent("HookEngineAgent")
+            self._run_agent("ScriptwriterAgent")
+            self._run_agent("CuratorAgent") # Re-curate
 
-        # We always want some context if possible.
-        if "sales_page_text" in self.state.data["inputs"] or "sales_page_url_text_dump" in self.state.data["inputs"]:
+    def _run_convert_asset(self):
+        inputs = self.state.data["inputs"]
+        source_type = inputs.get("source_asset_type", "")
+
+        # Special handling for VSL Transcript (Run 3)
+        # Goal: "system returns hooks + short scripts + retargeting blueprint"
+        if source_type == "vsl_transcript" or "vsl_transcript" in inputs:
+            print("  -> Detected VSL Conversion Workflow (Run 3)")
+            if not self.state.get_artifact("offer_brief"):
+                self._run_agent("IntakeAgent")
+
+            # Need persuasion architecture to break down the VSL logic
+            self._run_agent("OutcomeEngineerAgent")
+            self._run_agent("MechanismArchitectAgent")
+            self._run_agent("BeliefAnalystAgent")
+            self._run_agent("BeliefAlchemistAgent")
+
+            # Generate new assets
+            self._run_agent("HookEngineAgent")
+            self._run_agent("ScriptwriterAgent")
+            self._run_agent("STORMRetargetingAgent")
+            return
+
+        # Standard Convert Asset (Run 2)
+        if "sales_page_text" in inputs or "sales_page_url_text_dump" in inputs:
              self._run_agent("IntakeAgent")
 
-        # In a real system, the Orchestrator (LLM) would decide this.
-        # Here we follow the dependency graph: we need Voice and Segments often.
         if not self.state.get_artifact("voice_guide"):
-             self._run_agent("VoiceAgent") # Might default or use inputs
+             self._run_agent("VoiceAgent")
 
         # Run specific conversion agents
         self._run_agent("RepurposerAgent")
@@ -130,7 +162,6 @@ class CampaignDirector:
         agent = self.agents[agent_name]
 
         # Prepare inputs: Combine original inputs + all artifacts produced so far
-        # This gives the agent full context.
         current_context = self.state.data["inputs"].copy()
         current_context.update(self.state.get_all_artifacts())
 
