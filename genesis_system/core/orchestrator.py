@@ -1,6 +1,7 @@
 from typing import Dict, Any, List
 from genesis_system.core.llm_interface import LLMInterface
 from genesis_system.core.state_manager import CampaignState
+from genesis_system.core.utils import fetch_text_from_url
 
 # Import all agents
 from genesis_system.agents.intake import IntakeAgent
@@ -57,16 +58,39 @@ class CampaignDirector:
         Main entry point for running a campaign workflow.
         """
         print(f"Starting Campaign Director: {request_type}")
+
+        # PRE-PROCESSING: URL Fetching
+        if "sales_page_url" in inputs:
+            url = inputs["sales_page_url"]
+            # Check if text is missing or empty
+            has_text = "sales_page_text" in inputs and inputs["sales_page_text"]
+            has_dump = "sales_page_url_text_dump" in inputs and inputs["sales_page_url_text_dump"]
+
+            if not (has_text or has_dump):
+                print(f"  -> Fetching content from {url}...")
+                fetched_text = fetch_text_from_url(url)
+                if fetched_text:
+                    print(f"  -> Successfully fetched {len(fetched_text)} characters.")
+                    inputs["sales_page_url_text_dump"] = fetched_text
+                else:
+                    print("  -> Failed to fetch text. Proceeding without it (Agent may hallucinate or rely on market descriptor).")
+
         self.state.update_inputs(inputs)
 
         if request_type == "CREATE_CAMPAIGN":
             self._run_create_campaign()
         elif request_type == "CONVERT_ASSET":
             self._run_convert_asset()
+        elif request_type == "BUILD_AGENT":
+            self._run_build_agent()
         else:
             print(f"Unknown request type: {request_type}")
 
         return self.state.to_json()
+
+    def _run_build_agent(self):
+        print("  -> Running Bot Builder Workflow")
+        self._run_agent("AgentBuilderAgent")
 
     def _run_create_campaign(self):
         # 1. Foundational Intelligence

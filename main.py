@@ -64,6 +64,15 @@ def generate_deliverables_md(state):
                     md += f"{line}\n"
                 md += "\n"
 
+    # 7. New Agent Specs (Builder Mode)
+    if "new_agent_spec" in artifacts:
+        spec = artifacts["new_agent_spec"]
+        md += f"## New Agent Spec: {spec.get('agent_name')}\n"
+        md += f"**Purpose:** {spec.get('purpose')}\n"
+        md += "```json\n"
+        md += json.dumps(spec, indent=2)
+        md += "\n```\n"
+
     return md
 
 def generate_assets_json(state):
@@ -73,13 +82,14 @@ def generate_assets_json(state):
         "hooks": artifacts.get("hooks", []),
         "ad_directions": artifacts.get("ad_directions", []),
         "emails": artifacts.get("repurposed_assets", []),
-        "scene_plan": artifacts.get("scene_plan", {})
+        "scene_plan": artifacts.get("scene_plan", {}),
+        "new_agent_spec": artifacts.get("new_agent_spec", {})
     }
     return assets
 
 def main():
     parser = argparse.ArgumentParser(description="Genesis System CLI")
-    parser.add_argument("--mode", choices=["CREATE_CAMPAIGN", "CONVERT_ASSET"], required=True)
+    parser.add_argument("--mode", choices=["CREATE_CAMPAIGN", "CONVERT_ASSET", "BUILD_AGENT"], required=True)
     parser.add_argument("--input_file", help="Path to JSON file containing inputs", required=True)
     parser.add_argument("--output_dir", help="Directory to save outputs", default="output")
     parser.add_argument("--llm_provider", choices=["mock", "openai"], default="mock", help="LLM Provider to use")
