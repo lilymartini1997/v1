@@ -166,16 +166,35 @@ class CampaignDirector:
             return
 
         # Standard Convert Asset (Run 2)
+        print("  -> Detected Standard Asset Conversion (Run 2)")
+
+        # Ensure foundational intelligence if inputs suggest we are starting from raw copy
         if "sales_page_text" in inputs or "sales_page_url_text_dump" in inputs:
-             self._run_agent("IntakeAgent")
+             if not self.state.get_artifact("offer_brief"):
+                 self._run_agent("IntakeAgent")
 
         if not self.state.get_artifact("voice_guide"):
              self._run_agent("VoiceAgent")
 
+        # If we need to generate VARIANTS (implied by Segments or Ad Lottery), we need Segments/Buyer Profile
+        if not self.state.get_artifact("segments") and not self.state.get_artifact("buyer_profiles"):
+             # If we have an offer brief (from intake) or inputs, try to segment
+             self._run_agent("SegmentationAgent")
+             self._run_agent("BuyerResearchAgent")
+
         # Run specific conversion agents
-        self._run_agent("RepurposerAgent")
+        self._run_agent("RepurposerAgent") # Primary for direct conversion
         self._run_agent("ScriptToSceneConverterAgent")
         self._run_agent("STORMRetargetingAgent")
+
+        # Generation: If the user asked for hooks or script variants, we need the engines
+        # We can crudely check the "targets" input string or just run them if we have segments.
+        targets = str(inputs.get("targets", "")).lower()
+        if "hook" in targets or "variant" in targets or "script" in targets:
+             print("  -> Targets imply generation (Hooks/Variants). Running Engines.")
+             self._run_agent("HookEngineAgent")
+             self._run_agent("AdLotteryAgent")
+             self._run_agent("ScriptwriterAgent")
 
     def _run_agent(self, agent_name: str):
         """
