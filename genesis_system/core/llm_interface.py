@@ -135,18 +135,30 @@ class GeminiLLM(LLMInterface):
 
         print(f"--- GeminiLLM: Generating response for {agent_name} using {self.model_name} ---")
 
-        try:
-            # Gemini 1.5 Pro and Flash support system instructions and response_mime_type
-            model = genai.GenerativeModel(
-                self.model_name,
-                system_instruction=system_prompt,
-                generation_config={"response_mime_type": "application/json"}
-            )
+        import time
+        from google.api_core import exceptions
 
-            response = model.generate_content(user_prompt)
+        max_retries = 5
+        base_delay = 5
 
-            content = response.text
-            return json.loads(content)
-        except Exception as e:
-            print(f"Error calling Gemini API: {e}")
-            raise e
+        for attempt in range(max_retries):
+            try:
+                # Gemini 1.5 Pro and Flash support system instructions and response_mime_type
+                model = genai.GenerativeModel(
+                    self.model_name,
+                    system_instruction=system_prompt,
+                    generation_config={"response_mime_type": "application/json"}
+                )
+
+                response = model.generate_content(user_prompt)
+
+                content = response.text
+                return json.loads(content)
+            except exceptions.ResourceExhausted as e:
+                print(f"  !! Quota exceeded (429). Retrying in {base_delay * (2 ** attempt)}s... (Attempt {attempt + 1}/{max_retries})")
+                time.sleep(base_delay * (2 ** attempt))
+            except Exception as e:
+                print(f"Error calling Gemini API: {e}")
+                raise e
+
+        raise RuntimeError(f"Gemini API failed after {max_retries} retries due to quota exhaustion.")
